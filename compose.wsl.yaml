@@ -6,15 +6,18 @@
 # "operation not permitted" on mount. Bind mounts onto an already-mounted
 # share work instead. Run ../docker-mozarr/bootstrap/check-nfs.sh to confirm.
 #
-# Note ../docker-mozarr/bootstrap/mount-smb-wsl.sh mounts the library
-# READ-ONLY on purpose -- mozarr only reads. massMusicTagger writes, so these
-# paths need a read-write mount.
+# These paths must be WRITABLE. docker-mozarr mounts the library read-only on
+# purpose -- mozarr only reads -- but this writes a done marker into the
+# source and the tagged copy into the destination. Mount just these
+# directories read-write, leaving the rest of the library alone:
+#
+#   sudo bash bootstrap/mount-writable-wsl.sh incoming sorted archive
 
 services:
   mmt:
     volumes:
-      - ${INCOMING_DIR:-/mnt/nas/music/incoming}:/incoming
-      - ${SORTED_DIR:-/mnt/nas/music/sorted}:/sorted
-      - ${ARCHIVE_DIR:-/mnt/nas/music/archive}:/archive
+      - ${INCOMING_DIR:-/mnt/nas/incoming}:/incoming
+      - ${SORTED_DIR:-/mnt/nas/sorted}:/sorted
+      - ${ARCHIVE_DIR:-/mnt/nas/archive}:/archive
       - ./config:/config
       - cache:/cache

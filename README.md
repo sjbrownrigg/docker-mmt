@@ -78,11 +78,27 @@ AcoustID keys and why they are easy to confuse.
 
 ## WSL2
 
-NFS Docker volumes are blocked by the WSL2 mount syscall restriction. Use bind
-mounts onto an already-mounted share instead:
+NFS Docker volumes fail here with `operation not permitted` — a WSL2 mount
+syscall restriction. Use bind mounts onto an already-mounted share instead.
 
-```bash
-docker compose -f compose.yaml -f compose.wsl.yaml up -d
+Set this in `.env` and plain `docker compose up` picks up the override, with no
+`-f` flags to remember:
+
+```
+COMPOSE_FILE=compose.yaml:compose.wsl.yaml
 ```
 
-Note that a read-only library mount will not work here — massMusicTagger writes.
+**The mounted paths must be writable.** `docker-mozarr` mounts the music share
+read-only on purpose — mozarr only reads — but massMusicTagger writes a done marker into
+the source directory and the tagged copy into the destination, so a read-only
+mount fails partway through a run.
+
+Mount just the working directories read-write, leaving the rest of the library
+protected:
+
+```bash
+sudo bash bootstrap/mount-writable-wsl.sh incoming sorted archive
+```
+
+Then point `INCOMING_DIR`, `SORTED_DIR` and `ARCHIVE_DIR` in `.env` at those mount
+points. The script prints the exact lines.

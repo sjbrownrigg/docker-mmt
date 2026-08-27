@@ -1,0 +1,20 @@
+# WSL2 override: bind mounts instead of NFS volumes.
+#
+#   docker compose -f compose.yaml -f compose.wsl.yaml up -d
+#
+# NFS Docker volumes are blocked here by the WSL2 mount syscall restriction --
+# "operation not permitted" on mount. Bind mounts onto an already-mounted
+# share work instead. Run ../docker-mozarr/bootstrap/check-nfs.sh to confirm.
+#
+# Note ../docker-mozarr/bootstrap/mount-smb-wsl.sh mounts the library
+# READ-ONLY on purpose -- mozarr only reads. massMusicTagger writes, so these
+# paths need a read-write mount.
+
+services:
+  mmt:
+    volumes:
+      - ${INCOMING_DIR:-/mnt/nas/music/incoming}:/incoming
+      - ${SORTED_DIR:-/mnt/nas/music/sorted}:/sorted
+      - ${ARCHIVE_DIR:-/mnt/nas/music/archive}:/archive
+      - ./config:/config
+      - cache:/cache

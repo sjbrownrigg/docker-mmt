@@ -1,0 +1,82 @@
+name: massmusictagger
+
+services:
+  mmt:
+    build:
+      context: ../massMusicTagger
+      dockerfile: ../docker-mmt/Dockerfile
+      additional_contexts:
+        # discogstagger3 from the local checkout, so it can be iterated on.
+        dt3: ../discogstagger3
+        # This directory, for the entrypoint script -- it belongs to the
+        # deployment, not to either source repo.
+        deploy: .
+      args:
+        MMT_REF: ${MMT_REF:-unknown}
+        DT3_REF: ${DT3_REF:-unknown}
+    image: massmusictagger:local
+    container_name: mmt
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/London}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      # Credentials via the environment, not written into the conf file.
+      DISCOGS_USER_TOKEN: ${DISCOGS_USER_TOKEN:?set DISCOGS_USER_TOKEN in .env}
+      # Optional: only needed for the AcoustID fingerprint tiers (6-7).
+      # This is the APPLICATION key -- the submitter key is a different
+      # credential and cannot stand in for it.
+      ACOUSTID_API_KEY: ${ACOUSTID_API_KEY:-}
+      # Reserved: the AcoustID user key, for submission. Nothing reads it yet.
+      ACOUSTID_SUBMITTER_KEY: ${ACOUSTID_SUBMITTER_KEY:-}
+    volumes:
+      # incoming and sorted are mounted as separate roots rather than the
+      # library root, so the container cannot see -- let alone rewrite -- the
+      # rest of the collection. Both must be writable: massMusicTagger writes
+      # the done marker into the source directory and the tagged copy into
+      # the destination.
+      - incoming:/incoming
+      - sorted:/sorted
+      - archive:/archive
+      - ./config:/config
+      # Discogs and MusicBrainz responses. Local: it is derived data, and
+      # rebuilding it costs only API calls -- though those are rate limited, so
+      # it is worth keeping.
+      - cache:/cache
+    networks:
+      - mozarr-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  mozarr-net:
+    name: mozarr-net
+    external: true
+
+volumes:
+  incoming:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=${NAS_ADDR:-192.168.1.240},nfsvers=4,rw,hard,intr,timeo=600
+      device: :/volume1/Music/incoming
+
+  sorted:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=${NAS_ADDR:-192.168.1.240},nfsvers=4,rw,hard,intr,timeo=600
+      device: :/volume1/Music/sorted
+
+  archive:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=${NAS_ADDR:-192.168.1.240},nfsvers=4,rw,hard,intr,timeo=600
+      device: :/volume1/Music/archive
+
+  cache:
+    driver: local

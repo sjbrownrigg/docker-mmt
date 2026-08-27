@@ -1,0 +1,14 @@
+.env
+
+# The operator's live configuration. The layout is documented in
+# config/README.md; only that README is tracked.
+config/config.yaml
+config/formats.ini
+config/source_hints.yaml
+config/credentials/
+config/templates/
+config/rules/
+
+# Refreshed from the image on every container start.
+config/samples/*
+!config/samples/README.md

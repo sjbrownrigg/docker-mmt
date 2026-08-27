@@ -76,6 +76,44 @@ could be committed or copied into an image layer.
 See [config/README.md](config/README.md) for the full layout, including the two
 AcoustID keys and why they are easy to confuse.
 
+## Moving to another host
+
+This deployment is not self-contained. Four things need doing on a new host,
+and the first fails *silently* if you miss it.
+
+**1. Remove `COMPOSE_FILE` from `.env`.** It is a WSL2 workaround. Carrying it
+to a Linux host forces the bind-mount override, whose paths will not exist
+there — and Docker's default is to create a missing bind source rather than
+complain, so you would get empty directories, nothing to tag, and a container
+reporting itself healthy. `compose.wsl.yaml` now sets `create_host_path: false`
+so this errors at startup instead, but deleting the line is the actual fix. On
+Linux you want the NFS volumes in `compose.yaml`.
+
+**2. Clone the source repo alongside it.** The image is built from
+`../massMusicTagger`, not pulled:
+
+```bash
+git clone https://github.com/sjbrownrigg/massMusicTagger.git
+git clone https://github.com/sjbrownrigg/docker-mmt.git
+cd docker-mmt && ./build.sh
+```
+
+**3. Create the shared network**, which is external and owned by no stack:
+
+```bash
+docker network create mozarr-net
+```
+
+**4. Install an NFS client.** Docker's local NFS volume driver uses the host
+kernel's, so without it the volumes fail to mount:
+
+```bash
+sudo apt install nfs-common
+```
+
+Then set `NAS_ADDR` and `NAS_MUSIC_PATH` in `.env` and bring it up. Everything
+else — `PUID`/`PGID`, the credentials, the config directory — travels unchanged.
+
 ## WSL2
 
 NFS Docker volumes fail here with `operation not permitted` — a WSL2 mount

@@ -16,8 +16,25 @@
 services:
   mmt:
     volumes:
-      - ${INCOMING_DIR:-/mnt/nas/incoming}:/incoming
-      - ${SORTED_DIR:-/mnt/nas/sorted}:/sorted
-      - ${ARCHIVE_DIR:-/mnt/nas/archive}:/archive
+      # create_host_path: false matters more than it looks. Docker's default is
+      # to silently create a missing bind source, so a wrong or absent path
+      # mounts an empty directory, the run finds nothing, and the container
+      # reports itself perfectly healthy. Failing at startup is far better than
+      # a tagger that appears to run and quietly does nothing.
+      - type: bind
+        source: ${INCOMING_DIR:-/mnt/nas/incoming}
+        target: /incoming
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SORTED_DIR:-/mnt/nas/sorted}
+        target: /sorted
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${ARCHIVE_DIR:-/mnt/nas/archive}
+        target: /archive
+        bind:
+          create_host_path: false
       - ./config:/config
       - cache:/cache

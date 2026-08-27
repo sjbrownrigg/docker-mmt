@@ -7,20 +7,6 @@ PGID="${PGID:-1000}"
 CONFIG_DIR="${CONFIG_DIR:-/config}"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 
-# ── Populate /config ─────────────────────────────────────────────────────────
-#
-# samples/ is refreshed on every start so it always documents the version that
-# is actually installed -- it is the right thing to diff against after an
-# upgrade. Nothing outside samples/ is ever written, so an edited config is
-# never overwritten.
-seed_config() {
-    mkdir -p "${CONFIG_DIR}"/{credentials,samples}
-
-    if [ -d /defaults ]; then
-        cp -rf /defaults/. "${CONFIG_DIR}/samples/"
-    fi
-}
-
 # ── Refuse to run without a config the operator has actually reviewed ────────
 #
 # Tagging renames and moves files in the music library, so running against
@@ -45,12 +31,13 @@ require_config() {
 
 No configuration found at ${CONFIG_FILE}
 
-  ${CONFIG_DIR}/samples/ has just been populated with a reference copy of
-  every configurable file. To get started:
+  Create one:
 
-    cp ${CONFIG_DIR}/samples/config.yaml       ${CONFIG_DIR}/config.yaml
-    cp ${CONFIG_DIR}/samples/formats.ini       ${CONFIG_DIR}/formats.ini
-    cp ${CONFIG_DIR}/samples/credentials/*.yaml ${CONFIG_DIR}/credentials/
+    docker compose run --rm mmt --new-config
+
+  That writes config.yaml, formats.ini and a credentials/ directory here,
+  from the reference configs inside the packages themselves. It never
+  overwrites anything you have already edited.
 
   Then edit ${CONFIG_DIR}/config.yaml. Nothing in it needs to name another
   file: formats.ini is found because it sits beside it, and every
@@ -75,8 +62,6 @@ if [ "$(id -u)" = "0" ]; then
         && usermod -o -u "$PUID" -g "$PGID" mmt \
         || useradd -o -u "$PUID" -g "$PGID" -M -d /app -s /usr/sbin/nologin mmt
 
-    seed_config
-
     # Not /music: this container does write there, but a recursive chown across
     # the library would be slow and is not this container's decision to make.
     #
@@ -91,8 +76,6 @@ if [ "$(id -u)" = "0" ]; then
 
     exec gosu mmt "$@"
 fi
-
-seed_config
 wants_info_only "$@" || require_config
 
 exec "$@"

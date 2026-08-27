@@ -76,24 +76,15 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt \
  && pip install --no-cache-dir --no-deps /src/mmt \
  && rm -f /tmp/requirements.txt
 
-# Reference copies of every configurable file, staged read-only in the image.
-# The entrypoint refreshes /config/samples/ from here on every start, so what a
-# mounted volume documents always matches the version actually installed.
+# No sample files are staged here on purpose.
 #
-# Nothing here is loaded at run time. Defaults come from the schema table in
-# discogstagger/config_schema.py; these are documentation of it. They are named
-# for where they are meant to be copied to, not for being samples, so the copy
-# command a user runs is an obvious one.
-RUN set -eux; \
-    mkdir -p /defaults/credentials; \
-    cp /src/mmt/conf/config_sample.yaml       /defaults/config.yaml; \
-    cp /src/mmt/conf/formats_sample.ini       /defaults/formats.ini; \
-    cp /src/mmt/conf/discogs_sample.yaml      /defaults/credentials/discogs.yaml; \
-    cp /src/mmt/conf/musicbrainz_sample.yaml  /defaults/credentials/musicbrainz.yaml
+# massMusicTagger and discogstagger3 ship their own reference configs inside
+# their packages, and `--new-config` writes from those. Staging copies in the
+# image made the deployment a second source of truth for something the package
+# already owns, and the two could drift.
+#
+#   docker compose run --rm mmt --new-config
 
-# Mutable runtime state -- the Discogs OAuth .token and the API cache. Pointing
-# discogstagger3 at /cache is what lets /app stay read-only: the token used to
-# land in the working directory, which is why the entrypoint had to chown /app.
 ENV DISCOGSTAGGER_STATE_DIR=/cache
 
 # Where discogstagger3 looks for its configuration. Naming the directory rather

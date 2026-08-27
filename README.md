@@ -24,19 +24,16 @@ docker compose run --rm --entrypoint discogstagger mmt ...  # discogstagger3 alo
 ```bash
 cp .env.example .env          # then set DISCOGS_USER_TOKEN
 ./build.sh
-docker compose run --rm mmt   # populates config/samples/, then stops
+docker compose run --rm mmt --new-config
 ```
 
-The first run refuses to do anything, on purpose: it seeds `config/samples/`
-with a reference copy of every configurable file and tells you what to copy.
-Tagging renames and moves files, so it will not run against settings you have
+That writes `config.yaml`, `formats.ini` and a `credentials/` directory into
+`config/`, from the reference configs inside the packages themselves. It never
+overwrites anything you have already edited.
+
+Running without a configuration refuses rather than falling back to defaults:
+tagging renames and moves files, so it will not run against settings you have
 not reviewed.
-
-```bash
-cp config/samples/config.yaml        config/config.yaml
-cp config/samples/formats.ini        config/formats.ini
-cp config/samples/credentials/*.yaml config/credentials/
-```
 
 Set `common.source_dir` to `/incoming` and `common.dest_dir` to `/sorted`, then:
 

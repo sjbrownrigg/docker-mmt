@@ -10,9 +10,12 @@ source_hints.yaml        per-directory source overrides (optional)
 credentials/             API tokens, kept apart so they are easy to exclude
   discogs.yaml
   musicbrainz.yaml
-samples/                 reference copies, refreshed from the image on every
-                         start. Never edited, never loaded -- copy out of here.
 ```
+
+Create it with `docker compose run --rm mmt --new-config`, which writes these
+from the reference configs inside the packages themselves. There is no
+`samples/` directory: massMusicTagger and discogstagger3 own the reference
+copies, and the deployment does not keep a second set that could drift.
 
 That is the whole list. This directory holds what *you* own. Mako templates for
 `.nfo`/`.m3u` and the tagging rule tables belong to discogstagger3, ship inside

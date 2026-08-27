@@ -8,7 +8,3 @@ config/source_hints.yaml
 config/credentials/
 config/templates/
 config/rules/
-
-# Refreshed from the image on every container start.
-config/samples/*
-!config/samples/README.md

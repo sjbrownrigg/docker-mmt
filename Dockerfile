@@ -1,33 +1,39 @@
 # massMusicTagger, and discogstagger3 with it.
 #
-# One image, two commands. mmt is a wrapper around dt3 and installs it as a
-# dependency, and dt3 ships a `discogstagger` console script -- so a separate
-# dt3 container would be the same code twice:
+# The build context is this directory. massMusicTagger is installed from a
+# pinned git ref, and discogstagger3 comes with it -- mmt's own pyproject pins
+# the discogstagger3 commit, so its dependency list stays the single source of
+# truth for which version pairs with which.
 #
-#   docker compose run --rm mmt ...                              # mmt
-#   docker compose run --rm --entrypoint discogstagger mmt ...    # dt3 alone
+# It used to build from ../massMusicTagger with ../discogstagger3 and this
+# directory supplied as extra build contexts. That needed `additional_contexts`,
+# which requires Compose v2.17+ and fails outright on older ones ("Additional
+# property additional_contexts is not allowed"), and it meant two source repos
+# had to be cloned alongside this one. Installing from a ref removes both: this
+# repo now builds on its own.
 #
-# Build context is ../massMusicTagger, with ../discogstagger3 as a second
-# context so both can be iterated locally -- they are expected to keep evolving
-# as Mozarr's requirements land.
+# One image, two commands -- mmt installs discogstagger3 as a dependency and
+# discogstagger3 ships its own console script, so a separate container would be
+# the same code twice:
+#
+#   docker compose run --rm mmt ...                             # mmt
+#   docker compose run --rm --entrypoint discogstagger mmt ...   # dt3 alone
 
 FROM python:3.12-slim
 
-ARG MMT_REF=unknown
-ARG DT3_REF=unknown
+ARG MMT_REF=v2.0.0
 
 LABEL org.opencontainers.image.source="https://github.com/sjbrownrigg/massMusicTagger"
 LABEL org.opencontainers.image.description="Multi-source mass audio tagger (Discogs -> MusicBrainz -> existing tags)"
 LABEL org.opencontainers.image.revision="${MMT_REF}"
-LABEL uk.co.mozarr.discogstagger3.revision="${DT3_REF}"
 
-# From massMusicTagger's own Dockerfile, which documents each one:
 #   git                  pip installs from git+https URLs
 #   ffmpeg               decoding, ReplayGain (r128gain wraps it), CUE splitting
 #   shntool              CUE sheet splitting, fallback for non-FLAC
 #   flac                 FLAC encode/decode
 #   libdiscid0           DiscID computation, MusicBrainz tier 5
 #   libchromaprint-tools fpcalc, for AcoustID tiers 6 and 7
+#   gosu                 drop from root to PUID/PGID in the entrypoint
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         ffmpeg \
@@ -40,41 +46,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# discogstagger3 from the local checkout, first.
-#
-# This used to install mmt first and then overwrite dt3. That made pip resolve
-# mmt's "discogstagger3 @ git+https://...@<sha>" dependency over the network --
-# so a build from two local checkouts still failed whenever that SHA had not
-# been pushed yet ("upload-pack: not our ref"), even though the very next layer
-# threw the downloaded copy away.
-COPY --from=dt3 . /src/dt3
-RUN pip install --no-cache-dir /src/dt3
-
-# Then mmt, with its dependency list still the source of truth.
-#
-# Everything mmt declares is installed except discogstagger3 itself, which is
-# already present from the checkout above. Generating the list from
-# pyproject.toml rather than restating it here means a new dependency added to
-# mmt is picked up automatically instead of being silently missed.
-COPY . /src/mmt
-RUN python - <<'EOF' > /tmp/requirements.txt
-import tomllib
-
-with open("/src/mmt/pyproject.toml", "rb") as fh:
-    project = tomllib.load(fh)["project"]
-
-deps = list(project.get("dependencies", []))
-deps += project.get("optional-dependencies", {}).get("fingerprint", [])
-
-for dep in deps:
-    # dt3 comes from the local checkout, not from git.
-    if dep.split("@")[0].strip().lower().replace("_", "-") == "discogstagger3":
-        continue
-    print(dep)
-EOF
-RUN pip install --no-cache-dir -r /tmp/requirements.txt \
- && pip install --no-cache-dir --no-deps /src/mmt \
- && rm -f /tmp/requirements.txt
+RUN pip install --no-cache-dir \
+    "massmusictagger[fingerprint] @ git+https://github.com/sjbrownrigg/massMusicTagger.git@${MMT_REF}"
 
 # No sample files are staged here on purpose.
 #
@@ -85,28 +58,23 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt \
 #
 #   docker compose run --rm mmt --new-config
 
-ENV DISCOGSTAGGER_STATE_DIR=/cache
-
-# Where discogstagger3 looks for its configuration. Naming the directory rather
-# than a file is what removed the -c switch: a configuration is config.yaml and
-# formats.ini resolving relative to each other, so it moves as a unit.
+# Configuration is a directory, which is why there is no -c switch. Both tools
+# read the same one: mmt loads config.yaml and the credentials beside it, and
+# hands the same path to discogstagger3.
+ENV MMT_CONFIG_DIR=/config
 ENV DISCOGSTAGGER_CONFIG_DIR=/config
 
-# massMusicTagger's own config directory. Same directory: mmt loads config.yaml
-# and the credentials beside it, and hands the same path to discogstagger3.
-ENV MMT_CONFIG_DIR=/config
-
-# massMusicTagger's MusicBrainz / Cover Art Archive cache. Without this it
-# defaults under HOME, which for the mmt user is /app -- not writable, so the
-# run died on startup.
+# Mutable runtime state: the OAuth token, the API caches, the audit and run
+# logs. Without these they default under HOME, which for the mmt user is /app
+# and is not writable.
+ENV DISCOGSTAGGER_STATE_DIR=/cache
 ENV MMT_CACHE_DIR=/cache
 
-# Pre-created so the named volume initialises with a usable mode.
 RUN mkdir -p /cache
 
-VOLUME ["/music", "/config", "/cache"]
+VOLUME ["/incoming", "/sorted", "/archive", "/config", "/cache"]
 
-COPY --chmod=0755 --from=deploy entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chmod=0755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh", "mmt"]
 CMD ["-w"]

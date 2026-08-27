@@ -3,17 +3,13 @@ name: massmusictagger
 services:
   mmt:
     build:
-      context: ../massMusicTagger
-      dockerfile: ../docker-mmt/Dockerfile
-      additional_contexts:
-        # discogstagger3 from the local checkout, so it can be iterated on.
-        dt3: ../discogstagger3
-        # This directory, for the entrypoint script -- it belongs to the
-        # deployment, not to either source repo.
-        deploy: .
+      # This directory is the whole context. massMusicTagger is installed from
+      # a pinned ref and brings discogstagger3 with it, so there are no sibling
+      # checkouts to clone and no additional_contexts -- which needs Compose
+      # v2.17+ and fails on older versions.
+      context: .
       args:
-        MMT_REF: ${MMT_REF:-unknown}
-        DT3_REF: ${DT3_REF:-unknown}
+        MMT_REF: ${MMT_REF:-v2.0.0}
     image: massmusictagger:local
     container_name: mmt
     restart: unless-stopped

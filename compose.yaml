@@ -61,22 +61,22 @@ volumes:
     driver: local
     driver_opts:
       type: nfs
-      o: addr=${NAS_ADDR:-192.168.1.240},nfsvers=4,rw,hard,intr,timeo=600
-      device: :/volume1/Music/incoming
+      o: addr=${NAS_ADDR:?set NAS_ADDR in .env},nfsvers=4,rw,hard,intr,timeo=600
+      device: ":${NAS_MUSIC_PATH:-/volume1/Music}/incoming"
 
   sorted:
     driver: local
     driver_opts:
       type: nfs
-      o: addr=${NAS_ADDR:-192.168.1.240},nfsvers=4,rw,hard,intr,timeo=600
-      device: :/volume1/Music/sorted
+      o: addr=${NAS_ADDR:?set NAS_ADDR in .env},nfsvers=4,rw,hard,intr,timeo=600
+      device: ":${NAS_MUSIC_PATH:-/volume1/Music}/sorted"
 
   archive:
     driver: local
     driver_opts:
       type: nfs
-      o: addr=${NAS_ADDR:-192.168.1.240},nfsvers=4,rw,hard,intr,timeo=600
-      device: :/volume1/Music/archive
+      o: addr=${NAS_ADDR:?set NAS_ADDR in .env},nfsvers=4,rw,hard,intr,timeo=600
+      device: ":${NAS_MUSIC_PATH:-/volume1/Music}/archive"
 
   cache:
     driver: local

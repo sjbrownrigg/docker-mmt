@@ -8,3 +8,4 @@ config/source_hints.yaml
 config/credentials/
 config/templates/
 config/rules/
+cache/

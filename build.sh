@@ -25,4 +25,21 @@ for src in "${MMT_SRC:-../massMusicTagger}" "${DT3_SRC:-../discogstagger3}"; do
     fi
 done
 
+# Resolve the ref to a commit before building.
+#
+# Docker keys the pip layer on the build argument. Passing a branch name means
+# the argument does not change when the branch moves, so a rebuild after a push
+# silently reuses the old layer and produces an image of yesterday's code --
+# which looks exactly like a successful build.
+REF="${MMT_REF:-}"
+if [[ -n "$REF" ]]; then
+    SHA="$(git ls-remote https://github.com/sjbrownrigg/massMusicTagger.git "$REF" | cut -f1)"
+    if [[ -n "$SHA" ]]; then
+        echo "massMusicTagger  $REF -> ${SHA:0:12}"
+        export MMT_REF="$SHA"
+    else
+        echo "note: '$REF' is not a branch or tag on the remote; using it as-is." >&2
+    fi
+fi
+
 exec docker compose build "$@"

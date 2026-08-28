@@ -1,9 +1,8 @@
 # massMusicTagger, and discogstagger3 with it.
 #
 # The build context is this directory. massMusicTagger is installed from a
-# pinned git ref, and discogstagger3 comes with it -- mmt's own pyproject pins
-# the discogstagger3 commit, so its dependency list stays the single source of
-# truth for which version pairs with which.
+# pinned git ref and carries its own tagging core -- there is no longer a
+# second package whose version has to be paired with it.
 #
 # It used to build from ../massMusicTagger with ../discogstagger3 and this
 # directory supplied as extra build contexts. That needed `additional_contexts`,
@@ -12,12 +11,9 @@
 # had to be cloned alongside this one. Installing from a ref removes both: this
 # repo now builds on its own.
 #
-# One image, two commands -- mmt installs discogstagger3 as a dependency and
-# discogstagger3 ships its own console script, so a separate container would be
-# the same code twice:
-#
-#   docker compose run --rm mmt ...                             # mmt
-#   docker compose run --rm --entrypoint discogstagger mmt ...   # dt3 alone
+# massMusicTagger now carries the tagging core itself, so discogstagger3 is no
+# longer installed here and the `discogstagger` entry point is gone with it.
+# For discogstagger3 on its own, use docker-dt3.
 
 FROM python:3.12-slim
 

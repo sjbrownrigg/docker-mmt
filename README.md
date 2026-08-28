@@ -8,16 +8,12 @@ thing from the tool it deploys. It carries host-specific decisions — NAS
 addresses, UID/GID, which directories are mounted where — that have no business
 being versioned alongside the source, and it changes on a different rhythm.
 
-## One image, two commands
+## Relationship to discogstagger3
 
-massMusicTagger installs discogstagger3 as a dependency, and discogstagger3
-ships its own `discogstagger` console script. A separate container would be the
-same code twice, so both entry points live in one image:
-
-```bash
-docker compose run --rm mmt ...                             # massMusicTagger
-docker compose run --rm --entrypoint discogstagger mmt ...  # discogstagger3 alone
-```
+massMusicTagger absorbed the tagging core it used to import, so this image no
+longer contains discogstagger3 and no longer ships its `discogstagger` command.
+[docker-dt3](https://github.com/sjbrownrigg/docker-dt3) runs discogstagger3 on
+its own; it is unaffected by this and continues to work exactly as before.
 
 ## Quick start
 

@@ -8,6 +8,28 @@ thing from the tool it deploys. It carries host-specific decisions — NAS
 addresses, UID/GID, which directories are mounted where — that have no business
 being versioned alongside the source, and it changes on a different rhythm.
 
+---
+
+> ## ⚠ Breaking changes in massMusicTagger 3.0.0 — read before upgrading
+>
+> **A 2.x `config.yaml` will not work as written.** `[details]` had grown to
+> 28 keys and its contents moved to `[naming]`, `[artwork]`, `[archiving]`,
+> `[tags]` and `[source]`. The old names are **not** honoured, so a setting
+> that looks present simply does not apply.
+>
+> ```bash
+> git pull
+> docker compose run --rm mmt --migrate-config
+> docker compose build && docker compose up -d
+> ```
+>
+> See [Upgrading a 2.x deployment](#upgrading-a-2x-deployment) below.
+>
+> **3.1.0 is a security release** — album metadata could execute code during
+> tagging. Do not stay on 3.0.0.
+
+---
+
 ## Relationship to discogstagger3
 
 massMusicTagger absorbed the tagging core it used to import, so this image no

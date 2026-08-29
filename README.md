@@ -57,6 +57,30 @@ marker into the source directory and the tagged copy into the destination.
 `/cache` holds runtime state: the Discogs and MusicBrainz caches, the OAuth
 token, the audit log and the run log.
 
+## Upgrading a 2.x deployment
+
+3.0.0 regrouped the configuration: `[details]` had grown to 28 keys, and its
+contents now live in `[naming]`, `[artwork]`, `[archiving]`, `[tags]` and
+`[source]`. The old names are **not** honoured, so a `config.yaml` carried
+over from 2.x must be migrated before the container behaves — settings that
+look present will simply not apply.
+
+```bash
+git pull
+docker compose run --rm mmt --migrate-config   # rewrites config/config.yaml
+docker compose build
+docker compose up -d
+docker compose logs -f mmt
+```
+
+`--migrate-config` keeps every comment, leaves the original as
+`config.yaml.bak`, and lists what it moved and what it dropped. A clean start
+logs no "moved to \[section\]" or "was removed in 3.0.0" warnings; if it
+does, that setting is not being applied.
+
+3.1.0 also closes a path where album metadata could execute code during
+tagging, so do not stay on 3.0.0.
+
 ## Configuration
 
 There is no `-c` switch. A configuration is a directory — `config.yaml`,

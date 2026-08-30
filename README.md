@@ -19,9 +19,14 @@ being versioned alongside the source, and it changes on a different rhythm.
 >
 > ```bash
 > git pull
+> docker compose build                          # first: the tool comes from here
 > docker compose run --rm mmt --migrate-config
-> docker compose build && docker compose up -d
+> docker compose up -d
 > ```
+>
+> Build first. `docker compose run` uses the image you already have, so
+> migrating before the rebuild runs the *old* tool and quietly does less than
+> you expect.
 >
 > See [Upgrading a 2.x deployment](#upgrading-a-2x-deployment) below.
 >
@@ -87,20 +92,28 @@ contents now live in `[naming]`, `[artwork]`, `[archiving]`, `[tags]` and
 over from 2.x must be migrated before the container behaves — settings that
 look present will simply not apply.
 
+**Build before migrating.** `docker compose run` uses the image you already
+have, so a migration run before the rebuild is performed by the *old* tool —
+which is how a configuration ends up reporting "needs no changes" while the
+new version still has work to do, and how `--annotate-config` comes back as an
+unrecognised argument.
+
 ```bash
 git pull
-docker compose run --rm mmt --migrate-config   # rewrites config/config.yaml
-docker compose build
+docker compose build                            # first: the tool comes from here
+docker compose run --rm mmt --migrate-config    # rewrites config/config.yaml
+docker compose run --rm mmt --annotate-config   # optional: restore the comments
 docker compose up -d
 docker compose logs -f mmt
 ```
 
-**Run `--migrate-config` again after upgrading to 3.3.0**, even if you
-migrated already. Earlier versions moved and removed keys but left deprecated
-ones live, so a migrated configuration still carried `format_codes`,
-`char_substitutions` and `source_hints_file` — each naming a `conf/` path
-that resolves to nothing, each warning on every run. The second pass comments
-them out. It is a no-op on a configuration that has nothing left to do.
+**Migrate again after upgrading, even if you migrated before.** Each version
+has taught `--migrate-config` something new: 3.0.0 moved and removed keys,
+3.3.0 also retires deprecated ones. A configuration migrated by an earlier
+version still carried live `format_codes`, `char_substitutions` and
+`source_hints_file` keys — each naming a `conf/` path that resolves to
+nothing, each warning on every run. It is a no-op once there is nothing left
+to do, so it is always safe to run.
 
 `--new-config` now also writes `format_codes.yaml`, `char_substitutions.yaml`
 and `source_hints.yaml`, entirely commented out: there to read and edit,

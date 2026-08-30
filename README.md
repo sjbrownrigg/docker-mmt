@@ -1,7 +1,9 @@
 # docker-mmt
 
-Docker deployment for [massMusicTagger](https://github.com/sjbrownrigg/massMusicTagger),
-which builds on [discogstagger3](https://github.com/sjbrownrigg/discogstagger3).
+Docker deployment for
+[massMusicTagger](https://github.com/sjbrownrigg/massMusicTagger) — a mass
+audio tagger that reads metadata from Discogs and MusicBrainz and files your
+music by it.
 
 Kept out of the massMusicTagger repo deliberately: a deployment is a different
 thing from the tool it deploys. It carries host-specific decisions — NAS
@@ -70,9 +72,9 @@ docker compose up -d          # watch mode
 |---|---|
 | `config/` | Your live configuration, mounted at `/config` |
 | `.env` | Credentials and host settings. Never committed |
-| `Dockerfile` | Builds massMusicTagger with discogstagger3 from local checkouts |
-| `entrypoint.sh` | Seeds samples, drops to PUID/PGID, refuses without a config |
-| `build.sh` | Builds from `../massMusicTagger` and `../discogstagger3`, stamping both SHAs |
+| `Dockerfile` | Installs massMusicTagger from a pushed git ref — nothing is built from a local checkout |
+| `entrypoint.sh` | Drops to your PUID/PGID and refuses to run without a config you have reviewed |
+| `build.sh` | Resolves `MMT_REF` to a commit before building, so a moved branch cannot reuse a stale layer |
 
 ## Mounts
 

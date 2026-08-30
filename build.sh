@@ -13,10 +13,15 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# Sibling checkouts are not required, but if they are here it is worth saying
-# whether what you are about to build matches them -- the usual surprise is
+# A sibling checkout is not required, but if it is here it is worth saying
+# whether what you are about to build matches it -- the usual surprise is
 # building a tag while iterating on unpushed commits next door.
-for src in "${MMT_SRC:-../massMusicTagger}" "${DT3_SRC:-../discogstagger3}"; do
+#
+# Only massMusicTagger. This once also checked ../discogstagger3, which has
+# not been part of this image since massMusicTagger 3.0.0 absorbed its core --
+# so it warned that changes there would not reach the image, which was true
+# but only because nothing there ever could.
+for src in "${MMT_SRC:-../massMusicTagger}"; do
     [[ -d "$src/.git" ]] || continue
     head="$(git -C "$src" rev-parse --short HEAD)"
     if [[ -n "$(git -C "$src" status --porcelain)" ]]; then

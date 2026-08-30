@@ -3,6 +3,12 @@
 # The operator's live configuration. The layout is documented in
 # config/README.md; only that README is tracked.
 config/config.yaml
+# ...and anything the tool writes beside it. --migrate-config and
+# --annotate-config both keep a .bak, which is the live config by
+# another name and belongs no more in the repository than it does.
+config/*.bak
+config/format_codes.yaml
+config/char_substitutions.yaml
 config/formats.ini
 config/source_hints.yaml
 config/credentials/

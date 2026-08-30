@@ -95,6 +95,18 @@ docker compose up -d
 docker compose logs -f mmt
 ```
 
+**Run `--migrate-config` again after upgrading to 3.3.0**, even if you
+migrated already. Earlier versions moved and removed keys but left deprecated
+ones live, so a migrated configuration still carried `format_codes`,
+`char_substitutions` and `source_hints_file` — each naming a `conf/` path
+that resolves to nothing, each warning on every run. The second pass comments
+them out. It is a no-op on a configuration that has nothing left to do.
+
+`--new-config` now also writes `format_codes.yaml`, `char_substitutions.yaml`
+and `source_hints.yaml`, entirely commented out: there to read and edit,
+changing nothing until a line is uncommented, and merged over the packaged
+table when it is.
+
 `--migrate-config` keeps every comment, leaves the original as
 `config.yaml.bak`, and lists what it moved and what it dropped. A clean start
 logs no "moved to \[section\]" or "was removed in 3.0.0" warnings; if it

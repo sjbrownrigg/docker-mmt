@@ -83,6 +83,34 @@ docker compose up -d          # watch mode
 | `entrypoint.sh` | Drops to your PUID/PGID and refuses to run without a config you have reviewed |
 | `build.sh` | Resolves `MMT_REF` to a commit before building, so a moved branch cannot reuse a stale layer |
 
+## Staging on local disk
+
+`batch.staging_dir` is set to `/cache/staging`. Each album is assembled there
+and copied to the destination once it is finished.
+
+It matters because the destination is a network share. Without staging, the
+source is read from the share and written back to it, then ReplayGain reads
+the destination again and tagging rewrites it — every pass crossing the link.
+Measured on this deployment:
+
+| path | throughput |
+|---|---|
+| NAS → local disk | 31 MiB/s |
+| local disk → NAS | 21 MiB/s |
+| **NAS → NAS (what tagging did)** | **9.8 MiB/s** |
+| local → local | 1280 MiB/s |
+
+`/cache` is already a mounted volume, so the staging location is changed by
+remapping that mount rather than editing the configuration. It needs room for
+the largest album processed — a deluxe box set can be several gigabytes.
+
+Nothing accumulates: each album's staging directory is emptied as the album
+is moved out, and anything left behind by a killed run — `docker rm -f` is a
+SIGKILL and skips the cleanup — is swept when the next run starts.
+
+Leave `staging_dir` empty to write straight to the destination, which is the
+default and the right choice when the destination is a local disk.
+
 ## Mounts
 
 `/incoming`, `/sorted` and `/archive` are mounted as **separate roots** rather

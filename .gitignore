@@ -9,6 +9,7 @@ config/config.yaml
 config/*.bak
 config/format_codes.yaml
 config/char_substitutions.yaml
+config/artist_joins.yaml
 config/formats.ini
 config/source_hints.yaml
 config/credentials/

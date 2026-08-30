@@ -10,6 +10,13 @@ thing from the tool it deploys. It carries host-specific decisions — NAS
 addresses, UID/GID, which directories are mounted where — that have no business
 being versioned alongside the source, and it changes on a different rhythm.
 
+**Docker is one of two supported routes.** If you would rather run
+massMusicTagger directly on the machine, its README has
+[native installation instructions](https://github.com/sjbrownrigg/massMusicTagger#installing)
+covering Debian/Ubuntu, Fedora, RHEL, Arch, openSUSE, Alpine, macOS and WSL.
+Nothing here is required to use the tagger — this repository exists because
+Docker is the maintainer's own preference, not because it is the only way.
+
 ---
 
 > ## ⚠ Breaking changes in massMusicTagger 3.0.0 — read before upgrading
@@ -179,7 +186,10 @@ docker network create mozarr-net
 kernel's, so without it the volumes fail to mount:
 
 ```bash
-sudo apt install nfs-common
+sudo apt install nfs-common          # Debian, Ubuntu
+sudo dnf install nfs-utils           # Fedora, RHEL, Rocky, Alma
+sudo pacman -S nfs-utils             # Arch
+sudo zypper install nfs-client       # openSUSE
 ```
 
 Then set `NAS_ADDR` and `NAS_MUSIC_PATH` in `.env` and bring it up. Everything

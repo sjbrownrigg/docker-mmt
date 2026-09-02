@@ -9,7 +9,7 @@ services:
       # v2.17+ and fails on older versions.
       context: .
       args:
-        MMT_REF: ${MMT_REF:-v3.18.0}
+        MMT_REF: ${MMT_REF:-v3.18.1}
     image: massmusictagger:local
     container_name: mmt
     restart: unless-stopped

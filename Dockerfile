@@ -21,7 +21,7 @@ FROM python:3.12-slim
 # "docker build" with no --build-arg. It said v2.0.0 long after that stopped
 # being current, so anyone building this file directly got a two-major-version
 # old tagger and no hint of it.
-ARG MMT_REF=v3.14.0
+ARG MMT_REF=v3.16.1
 
 LABEL org.opencontainers.image.source="https://github.com/sjbrownrigg/massMusicTagger"
 LABEL org.opencontainers.image.description="Multi-source mass audio tagger (Discogs -> MusicBrainz -> existing tags)"

@@ -37,4 +37,4 @@ services:
         bind:
           create_host_path: false
       - ./config:/config
-      - cache:/cache
+      - ./cache:/cache

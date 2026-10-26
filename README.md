@@ -70,8 +70,27 @@ not reviewed.
 Set `common.source_dir` to `/incoming` and `common.dest_dir` to `/sorted`, then:
 
 ```bash
-docker compose up -d          # watch mode
+docker compose up -d --wait   # watch mode
 ```
+
+`--wait` is worth the extra word. The container refuses to start without a
+config it can read (exit 78) or with a share that is not really mounted
+(exit 69), and `restart: "no"` means it fails once instead of looping. Plain
+`up -d` returns before any of that happens, so it prints `Started` either way;
+`--wait` reports `container mmt exited (69)` and returns non-zero.
+
+An unmounted share is the one worth guarding against: the bind source exists,
+so Docker mounts it happily and the directory is simply empty. A run then finds
+no audio, exits successfully and looks like it worked. Each of `/incoming`,
+`/sorted` and `/archive` must carry a `.mmt-mounted` sentinel — created through
+the mountpoints while the shares *are* mounted, so the files land on the NAS:
+
+```bash
+sudo bash bootstrap/mount-writable-wsl.sh incoming sorted archive
+touch /mnt/nas/{incoming,sorted,archive}/.mmt-mounted
+```
+
+Set `MMT_REQUIRE_SENTINEL=0` if the data directories are genuinely local.
 
 ## Layout
 

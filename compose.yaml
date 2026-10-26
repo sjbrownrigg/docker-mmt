@@ -12,7 +12,26 @@ services:
         MMT_REF: ${MMT_REF:-v3.22.2}
     image: massmusictagger:local
     container_name: mmt
-    restart: unless-stopped
+    # Fail once rather than loop.
+    #
+    # Docker cannot filter restarts by exit code, so unless-stopped treated a
+    # refusal to start -- no config (78) or an unmounted share (69) -- exactly
+    # like a crash, and retried it forever. `compose up -d` then printed
+    # "Started" over a container that was really Restarting (69): the clear
+    # message went to the logs and the status line said the opposite. That is
+    # the same "looks healthy" failure the mount guard exists to stop.
+    #
+    # Neither of those conditions fixes itself, and a tagger is not a service
+    # that must be up: it is started deliberately, and with source_action: move
+    # an automatic restart part-way through an album is worse than stopping --
+    # it would resume over half-moved files.
+    #
+    # The cost is no automatic recovery from a genuine mid-run crash, and none
+    # on daemon start. Both are acceptable for something run by hand; if that
+    # changes, the way to have both is a one-shot preflight service with
+    # depends_on: condition: service_completed_successfully, leaving this one
+    # unless-stopped.
+    restart: "no"
     environment:
       TZ: ${TZ:-Europe/London}
       PUID: ${PUID:-1000}

@@ -6,11 +6,20 @@
 #
 # The container refuses to start unless each share carries a .mmt-mounted
 # sentinel file, because an unmounted share looks exactly like an empty one from
-# inside Docker -- see require_mounts in entrypoint.sh. Create them once, on the
-# NAS rather than on the mountpoint, or they will be hidden the moment the share
-# mounts over them:
+# inside Docker -- see require_mounts in entrypoint.sh.
 #
-#   touch /volume1/Music/{incoming,sorted,archive}/.mmt-mounted
+# Create them once, AFTER this script has mounted the shares, through the
+# mountpoints:
+#
+#   touch /mnt/nas/{incoming,sorted,archive}/.mmt-mounted
+#
+# The order matters, and it is the whole point of the sentinel. Mounted, those
+# paths are the share and the files land on the NAS. Unmounted, they are empty
+# local directories, the files land on the host, and the share hides them the
+# moment it mounts -- leaving a sentinel that is present when the share is
+# absent, which is exactly backwards.
+#
+# /volume1/Music/... is the Synology's own path and is not visible from here.
 #
 # Why this exists
 # ---------------

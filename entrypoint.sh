@@ -72,9 +72,12 @@ EOF
 # share, so it is present exactly when the share is mounted and absent exactly
 # when it is not.
 #
-# Create them once, on the NAS:
+# Create them once, through the mountpoints and only while the shares are
+# mounted -- written while unmounted they land on the host and the share hides
+# them on mount, giving a sentinel that is present precisely when the share is
+# not:
 #
-#   touch /volume1/Music/{incoming,sorted,archive}/.mmt-mounted
+#   touch /mnt/nas/{incoming,sorted,archive}/.mmt-mounted
 #
 # Set MMT_REQUIRE_SENTINEL=0 to skip the check -- for a deployment whose data
 # directories are local, or an image being exercised without the library.

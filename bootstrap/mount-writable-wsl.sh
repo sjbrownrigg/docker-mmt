@@ -4,6 +4,14 @@
 #
 #   sudo bash bootstrap/mount-writable-wsl.sh
 #
+# The container refuses to start unless each share carries a .mmt-mounted
+# sentinel file, because an unmounted share looks exactly like an empty one from
+# inside Docker -- see require_mounts in entrypoint.sh. Create them once, on the
+# NAS rather than on the mountpoint, or they will be hidden the moment the share
+# mounts over them:
+#
+#   touch /volume1/Music/{incoming,sorted,archive}/.mmt-mounted
+#
 # Why this exists
 # ---------------
 # docker-mozarr's bootstrap/mount-smb-wsl.sh mounts the whole Music share

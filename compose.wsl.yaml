@@ -16,11 +16,20 @@
 services:
   mmt:
     volumes:
-      # create_host_path: false matters more than it looks. Docker's default is
-      # to silently create a missing bind source, so a wrong or absent path
-      # mounts an empty directory, the run finds nothing, and the container
-      # reports itself perfectly healthy. Failing at startup is far better than
-      # a tagger that appears to run and quietly does nothing.
+      # create_host_path: false stops Docker doing what it does by default --
+      # silently creating a missing bind source, so a typo in a path fails
+      # instead of mounting an empty directory.
+      #
+      # It does NOT stop the worse case, and this comment used to claim it did.
+      # The setting refuses a source that does not exist; it says nothing about
+      # one that exists and is empty because the share behind it was never
+      # mounted. On WSL2 these are ordinary directories until the mount script
+      # runs, so the bind succeeds and the container starts healthy with nothing
+      # behind it -- observed 2026-10-26 on all three at once.
+      #
+      # The entrypoint covers that gap: each share must carry a .mmt-mounted
+      # sentinel, present exactly when the share is mounted. See require_mounts
+      # in entrypoint.sh.
       - type: bind
         source: ${INCOMING_DIR:-/mnt/nas/incoming}
         target: /incoming
